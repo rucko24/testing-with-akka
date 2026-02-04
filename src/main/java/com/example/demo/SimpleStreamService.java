@@ -11,6 +11,7 @@ import lombok.extern.log4j.Log4j2;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 @Log4j2
@@ -18,9 +19,26 @@ import java.util.concurrent.CompletionStage;
 public class SimpleStreamService {
 
     public NotUsed simpleStreamWithAnActor() {
-        return Source.range(1, 10)
+//        Source.range(1, 10);
+        return Source.range(1, 10, 2)
                 .via(this.getMap())
                 .to(this.getForeach())
+                .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
+    }
+
+    public NotUsed simpleStreamWithAnActorWithListSources() {
+//        Source.range(1, 10);
+        Source<String, NotUsed> source = Source.from(List.of("A","B","C","D"));
+
+        Flow<Integer, String, NotUsed> flow = Flow.of(Integer.class)
+                .map(e -> "The next value is: " + e);
+
+        Flow<String, String, NotUsed> flow2 = Flow.of(String.class)
+                .map(e -> "The next value is: " + e);
+
+
+        return source.via(flow2)
+                .to(getForeach())
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }
 

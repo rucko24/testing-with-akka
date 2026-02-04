@@ -28,16 +28,9 @@ public class SimpleStreamService {
 
     public NotUsed simpleStreamWithAnActorWithListSources() {
 //        Source.range(1, 10);
-        Source<String, NotUsed> source = Source.from(List.of("A","B","C","D"));
-
-        Flow<Integer, String, NotUsed> flow = Flow.of(Integer.class)
-                .map(e -> "The next value is: " + e);
-
-        Flow<String, String, NotUsed> flow2 = Flow.of(String.class)
-                .map(e -> "The next value is: " + e);
-
-
-        return source.via(flow2)
+        return Source.from(List.of("A", "B", "C", "D"))
+                .via(Flow.of(String.class)
+                        .map(e -> "The next value is: " + e))
                 .to(getForeach())
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }

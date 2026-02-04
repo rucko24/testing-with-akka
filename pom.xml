@@ -48,12 +48,12 @@
 			<version>2.7.0</version>
 		</dependency>
 
-		<!-- Source: https://mvnrepository.com/artifact/com.typesafe.akka/akka-actor -->
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
-			<artifactId>akka-actor_3</artifactId>
+			<artifactId>akka-actor-typed_3</artifactId>
 			<version>2.7.0</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

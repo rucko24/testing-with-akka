@@ -17,7 +17,7 @@ public class DemoAkkaApplication {
 	@Bean
 	public CommandLineRunner run(SimpleStreamService simpleStreamService) {
 		return args -> {
-			log.info(simpleStreamService.source());
+			log.info(simpleStreamService.simpleStreamWithAnActor());
 		};
 	}
 

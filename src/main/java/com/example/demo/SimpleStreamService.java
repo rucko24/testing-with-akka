@@ -5,10 +5,10 @@ import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.scaladsl.Behaviors;
 import akka.stream.javadsl.Flow;
-import akka.stream.javadsl.RunnableGraph;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import lombok.extern.log4j.Log4j2;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletionStage;
@@ -17,17 +17,20 @@ import java.util.concurrent.CompletionStage;
 @Service
 public class SimpleStreamService {
 
-    public RunnableGraph<NotUsed> source() {
-        Source<Integer, NotUsed> source = Source.range(1, 10);
+    public NotUsed simpleStreamWithAnActor() {
+        return Source.range(1, 10)
+                .via(this.getMap())
+                .to(this.getForeach())
+                .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
+    }
 
-        Flow<Integer, String, NotUsed> flow = Flow.of(Integer.class)
+    private @NonNull Flow<Integer, String, NotUsed> getMap() {
+        return Flow.of(Integer.class)
                 .map(value -> "The next value is: " + value);
+    }
 
-        Sink<String, CompletionStage<Done>> sink = Sink.foreach(log::info);
-
-        ActorSystem actorSystem = ActorSystem.create(Behaviors.empty);
-
-        return source.via(flow).to(sink);
+    private @NonNull Sink<String, CompletionStage<Done>> getForeach() {
+        return Sink.foreach(log::info);
     }
 
 }

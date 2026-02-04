@@ -4,6 +4,7 @@ import akka.Done;
 import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.scaladsl.Behaviors;
+import akka.stream.DelayOverflowStrategy;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
@@ -11,6 +12,7 @@ import lombok.extern.log4j.Log4j2;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
@@ -39,6 +41,15 @@ public class SimpleStreamService {
         return Source.repeat(3.141592654)
                 .via(Flow.of(Double.class)
                         .map(value -> "The next value is: " + value))
+                .to(Sink.foreach(log::info))
+                .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
+    }
+
+    public NotUsed sourceCycle() {
+        return Source.cycle(() -> List.of("Paula", "Bibi", "Carlos", "Daniel")
+                        .iterator())
+                .delay(Duration.ofSeconds(1), DelayOverflowStrategy.backpressure())
+                .via(Flow.of(String.class))
                 .to(Sink.foreach(log::info))
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }

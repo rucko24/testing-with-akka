@@ -19,7 +19,8 @@ public class DemoAkkaApplication {
 		return args -> {
 //			log.info(simpleStreamService.simpleStreamWithAnActor());
 //			log.info(simpleStreamService.simpleStreamWithAnActorWithListSources());
-			log.info(simpleStreamService.simpleStreamSourceRepeat());
+//			log.info(simpleStreamService.simpleStreamSourceRepeat());
+			log.info(simpleStreamService.sourceCycle());
 		};
 	}
 

@@ -18,7 +18,8 @@ public class DemoAkkaApplication {
 	public CommandLineRunner run(SimpleStreamService simpleStreamService) {
 		return args -> {
 //			log.info(simpleStreamService.simpleStreamWithAnActor());
-			log.info(simpleStreamService.simpleStreamWithAnActorWithListSources());
+//			log.info(simpleStreamService.simpleStreamWithAnActorWithListSources());
+			log.info(simpleStreamService.simpleStreamSourceRepeat());
 		};
 	}
 

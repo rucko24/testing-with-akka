@@ -35,6 +35,14 @@ public class SimpleStreamService {
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }
 
+    public NotUsed simpleStreamSourceRepeat() {
+        return Source.repeat(3.141592654)
+                .via(Flow.of(Double.class)
+                        .map(value -> "The next value is: " + value))
+                .to(Sink.foreach(log::info))
+                .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
+    }
+
     private @NonNull Flow<Integer, String, NotUsed> getMap() {
         return Flow.of(Integer.class)
                 .map(value -> "The next value is: " + value);

@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import akka.Done;
 import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.Behaviors;
@@ -51,12 +52,64 @@ public class ExploringMaterializedValuesService {
                 }), Keep.right())
                 .run(actorSystem)
                 .whenComplete((value, error) -> {
-                   if(error == null) {
-                       log.info("The graph's materialized value is {}", value);
-                   } else {
-                       log.info("Error {}", error.getMessage());
-                   }
+                    if (error == null) {
+                        log.info("The graph's materialized value is {}", value);
+                    } else {
+                        log.info("Error {}", error.getMessage());
+                    }
                 });
+    }
+
+    public CompletionStage<Integer> sourceMatV3() {
+        return Source.range(1, 100)
+                .map(item -> 1 + SECURE_RANDOM.nextInt(1000))
+                .via(Flow.of(Integer.class)
+                        .filter(x -> x > 200))
+                .viaMat(Flow.of(Integer.class)
+                        .filter(x -> x % 2 == 0), Keep.right())
+                .toMat(Sink.fold(0, (counter, value) -> {
+                    log.info(value);
+                    return counter + 1;
+                }), Keep.right())
+                .run(actorSystem)
+                .whenComplete((value, error) -> {
+                    if (error == null) {
+                        log.info("The graph's materialized value is {}", value);
+                    } else {
+                        log.info("Error {}", error.getMessage());
+                    }
+                });
+    }
+
+    public CompletionStage<Done> sourceMatV4() {
+        var source = Source.range(1, 100)
+                .map(item -> 1 + SECURE_RANDOM.nextInt(1000));
+
+
+        var completioStage = source.via(Flow.of(Integer.class)
+                        .filter(x -> x > 200))
+                .viaMat(Flow.of(Integer.class)
+                        .filter(x -> x % 2 == 0), Keep.right())
+                .toMat(Sink.fold(0, (counter, value) -> {
+                    log.info(value);
+                    return counter + 1;
+                }), Keep.right())
+                .run(actorSystem)
+                .whenComplete((value, error) -> {
+                    if (error == null) {
+                        log.info("The graph's materialized value is {}", value);
+                    } else {
+                        log.info("Error {}", error.getMessage());
+                    }
+                    actorSystem.terminate();
+                });
+
+        return source.toMat(Sink.ignore(), Keep.right())
+                .run(actorSystem)
+                .whenComplete((value, error) -> {
+                   actorSystem.terminate();
+                });
+
     }
 
 

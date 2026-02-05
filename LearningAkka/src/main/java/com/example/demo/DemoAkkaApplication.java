@@ -31,7 +31,9 @@ public class DemoAkkaApplication {
 //			log.info(exploringFlowService.sourceFilterMapGrouped());
 //			log.info(exploringFlowService.sourceFilterMapGroupedv2());
 //			log.info(exploringMaterializedValuesService.source());
-			log.info(exploringMaterializedValuesService.sourcev2());
+//			log.info(exploringMaterializedValuesService.sourcev2());
+//			log.info(exploringMaterializedValuesService.sourceMatV3());
+			log.info(exploringMaterializedValuesService.sourceMatV4());
         };
     }
 

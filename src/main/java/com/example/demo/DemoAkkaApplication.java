@@ -22,7 +22,8 @@ public class DemoAkkaApplication {
 //			log.info(simpleStreamService.simpleStreamSourceRepeat());
 //			log.info(simpleStreamService.sourceCycle());
 //			log.info(simpleStreamService.sourceInfiniteRangeSource());
-			log.info(simpleStreamService.sourceInfiniteRangeSourceIgnore());
+//			log.info(simpleStreamService.sourceInfiniteRangeSourceIgnore());
+			log.info(simpleStreamService.sourceRunWith());
 		};
 	}
 

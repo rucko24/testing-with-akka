@@ -75,6 +75,15 @@ public class SimpleStreamService {
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }
 
+    public NotUsed sourceRunWith() {
+        return this.sinkForEach()
+                .runWith(Source.from(List.of("Paula", "Bibi", "Carlos", "Daniel"))
+                                .throttle(1, Duration.ofMillis(500))
+                                .via(Flow.of(String.class)
+                                        .map(item -> "Name is: " + item))
+                        , ActorSystem.create(Behaviors.empty(), "actor-system"));
+    }
+
     private @NonNull Flow<Integer, String, NotUsed> getMap() {
         return Flow.of(Integer.class)
                 .map(value -> "The next value is: " + value);

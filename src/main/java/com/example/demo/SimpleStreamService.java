@@ -84,6 +84,14 @@ public class SimpleStreamService {
                         , ActorSystem.create(Behaviors.empty(), "actor-system"));
     }
 
+    public CompletionStage<Done> sourceRunForEach() {
+        return Source.from(List.of("Paula", "Bibi", "Carlos", "Daniel"))
+                .throttle(1, Duration.ofMillis(500))
+                .via(Flow.of(String.class)
+                        .map(item -> "Name is: " + item))
+                .runForeach(log::info, ActorSystem.create(Behaviors.empty(), "actor-system"));
+    }
+
     private @NonNull Flow<Integer, String, NotUsed> getMap() {
         return Flow.of(Integer.class)
                 .map(value -> "The next value is: " + value);

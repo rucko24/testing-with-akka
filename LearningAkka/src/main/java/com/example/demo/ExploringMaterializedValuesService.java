@@ -86,7 +86,7 @@ public class ExploringMaterializedValuesService {
                 .map(item -> 1 + SECURE_RANDOM.nextInt(1000));
 
 
-        var completioStage = source.via(Flow.of(Integer.class)
+        var result = source.via(Flow.of(Integer.class)
                         .filter(x -> x > 200))
                 .viaMat(Flow.of(Integer.class)
                         .filter(x -> x % 2 == 0), Keep.right())
@@ -107,8 +107,38 @@ public class ExploringMaterializedValuesService {
         return source.toMat(Sink.ignore(), Keep.right())
                 .run(actorSystem)
                 .whenComplete((value, error) -> {
-                   actorSystem.terminate();
+                    actorSystem.terminate();
                 });
+
+    }
+
+    public CompletionStage<Integer> sourceReduce() {
+        var source = Source.range(1, 100)
+                .map(item -> 1 + SECURE_RANDOM.nextInt(1000));
+
+        return source.via(Flow.of(Integer.class)
+                        .filter(x -> x > 200))
+                .viaMat(Flow.of(Integer.class)
+                        .filter(x -> x % 2 == 0), Keep.right())
+                .toMat(Sink.reduce((firstValue, secondValue) -> {
+                    log.info(secondValue);
+                    return firstValue + secondValue;
+                }), Keep.right())
+                .run(actorSystem)
+                .whenComplete((value, error) -> {
+                    if (error == null) {
+                        log.info("The graph's materialized value is {}", value);
+                    } else {
+                        log.info("Error {}", error.getMessage());
+                    }
+                    actorSystem.terminate();
+                });
+
+//        return source.toMat(Sink.ignore(), Keep.right())
+//                .run(actorSystem)
+//                .whenComplete((value, error) -> {
+//                    actorSystem.terminate();
+//                });
 
     }
 

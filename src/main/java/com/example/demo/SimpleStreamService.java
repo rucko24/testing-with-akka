@@ -25,7 +25,7 @@ public class SimpleStreamService {
 //        Source.range(1, 10);
         return Source.range(1, 10, 2)
                 .via(this.getMap())
-                .to(this.getForeach())
+                .to(this.sinkForEach())
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }
 
@@ -34,7 +34,7 @@ public class SimpleStreamService {
         return Source.from(List.of("A", "B", "C", "D"))
                 .via(Flow.of(String.class)
                         .map(e -> "The next value is: " + e))
-                .to(getForeach())
+                .to(this.sinkForEach())
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }
 
@@ -42,7 +42,7 @@ public class SimpleStreamService {
         return Source.repeat(3.141592654)
                 .via(Flow.of(Double.class)
                         .map(value -> "The next value is: " + value))
-                .to(Sink.foreach(log::info))
+                .to(this.sinkForEach())
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }
 
@@ -51,7 +51,7 @@ public class SimpleStreamService {
                         .iterator())
                 .delay(Duration.ofSeconds(1), DelayOverflowStrategy.backpressure())
                 .via(Flow.of(String.class))
-                .to(Sink.foreach(log::info))
+                .to(this.sinkForEach())
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }
 
@@ -61,7 +61,17 @@ public class SimpleStreamService {
                 .via(Flow.of(Integer.class))
                 .throttle(1, Duration.ofSeconds(1))
                 .take(3)
-                .to(Sink.foreach(log::info))
+                .to(this.sinkForEach())
+                .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
+    }
+
+    public NotUsed sourceInfiniteRangeSourceIgnore() {
+        return Source.fromIterator(() -> Stream.iterate(0, seed -> 1 + seed)
+                        .iterator())
+                .via(Flow.of(Integer.class))
+                .throttle(1, Duration.ofSeconds(1))
+                .take(3)
+                .to(this.sinkIgnore())
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }
 
@@ -70,8 +80,12 @@ public class SimpleStreamService {
                 .map(value -> "The next value is: " + value);
     }
 
-    private @NonNull Sink<String, CompletionStage<Done>> getForeach() {
+    private @NonNull <T> Sink<T, CompletionStage<Done>> sinkForEach() {
         return Sink.foreach(log::info);
+    }
+
+    private @NonNull <T> Sink<T, CompletionStage<Done>> sinkIgnore() {
+        return Sink.ignore();
     }
 
 }

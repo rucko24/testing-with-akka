@@ -21,7 +21,8 @@ public class DemoAkkaApplication {
 //			log.info(simpleStreamService.simpleStreamWithAnActorWithListSources());
 //			log.info(simpleStreamService.simpleStreamSourceRepeat());
 //			log.info(simpleStreamService.sourceCycle());
-			log.info(simpleStreamService.sourceInfiniteRangeSource());
+//			log.info(simpleStreamService.sourceInfiniteRangeSource());
+			log.info(simpleStreamService.sourceInfiniteRangeSourceIgnore());
 		};
 	}
 

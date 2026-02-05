@@ -3,7 +3,7 @@ package com.example.demo;
 import akka.Done;
 import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
-import akka.actor.typed.scaladsl.Behaviors;
+import akka.actor.typed.javadsl.Behaviors;
 import akka.stream.DelayOverflowStrategy;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Sink;

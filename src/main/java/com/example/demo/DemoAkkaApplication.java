@@ -15,7 +15,8 @@ public class DemoAkkaApplication {
 	}
 
 	@Bean
-	public CommandLineRunner run(SimpleStreamService simpleStreamService) {
+	public CommandLineRunner run(SimpleStreamService simpleStreamService,
+								 ExploringFlowService exploringFlowService) {
 		return args -> {
 //			log.info(simpleStreamService.simpleStreamWithAnActor());
 //			log.info(simpleStreamService.simpleStreamWithAnActorWithListSources());
@@ -24,7 +25,8 @@ public class DemoAkkaApplication {
 //			log.info(simpleStreamService.sourceInfiniteRangeSource());
 //			log.info(simpleStreamService.sourceInfiniteRangeSourceIgnore());
 //			log.info(simpleStreamService.sourceRunWith());
-			log.info(simpleStreamService.sourceRunForEach());
+//			log.info(simpleStreamService.sourceRunForEach());
+			log.info(exploringFlowService.sourceFilter());
 		};
 	}
 

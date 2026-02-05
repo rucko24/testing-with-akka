@@ -10,14 +10,15 @@ import org.springframework.context.annotation.Bean;
 @SpringBootApplication
 public class DemoAkkaApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(DemoAkkaApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(DemoAkkaApplication.class, args);
+    }
 
-	@Bean
-	public CommandLineRunner run(SimpleStreamService simpleStreamService,
-								 ExploringFlowService exploringFlowService) {
-		return args -> {
+    @Bean
+    public CommandLineRunner run(SimpleStreamService simpleStreamService,
+                                 ExploringFlowService exploringFlowService,
+                                 ExploringMaterializedValuesService exploringMaterializedValuesService) {
+        return args -> {
 //			log.info(simpleStreamService.simpleStreamWithAnActor());
 //			log.info(simpleStreamService.simpleStreamWithAnActorWithListSources());
 //			log.info(simpleStreamService.simpleStreamSourceRepeat());
@@ -28,8 +29,9 @@ public class DemoAkkaApplication {
 //			log.info(simpleStreamService.sourceRunForEach());
 //			log.info(exploringFlowService.sourceFilter());
 //			log.info(exploringFlowService.sourceFilterMapGrouped());
-			log.info(exploringFlowService.sourceFilterMapGroupedv2());
-		};
-	}
+//			log.info(exploringFlowService.sourceFilterMapGroupedv2());
+			log.info(exploringMaterializedValuesService.source());
+        };
+    }
 
 }

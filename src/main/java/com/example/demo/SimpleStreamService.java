@@ -59,7 +59,7 @@ public class SimpleStreamService {
         return Source.fromIterator(() -> Stream.iterate(0, seed -> 1 + seed)
                         .iterator())
                 .via(Flow.of(Integer.class))
-                .delay(Duration.ofSeconds(1), DelayOverflowStrategy.dropBuffer())
+                .throttle(1, Duration.ofSeconds(1))
                 .to(Sink.foreach(log::info))
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }

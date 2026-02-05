@@ -27,7 +27,7 @@ public class BigPrimesServices {
     public NotUsed buildBigPrimes() {
         return Source.range(1, 10)
                 .via(Flow.of(Integer.class)
-                        .map(number -> new BigInteger(2000, new Random())))
+                        .map(number -> new BigInteger(2000, SECURE_RANDOM)))
                 .via(Flow.of(BigInteger.class)
                         .map(number -> {
                             var prime = number.nextProbablePrime();

@@ -10,6 +10,10 @@ import akka.stream.javadsl.Source;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
@@ -42,8 +46,39 @@ public class ExploringFlowService {
                 .run(this.actorSystem);
     }
 
+    /**
+     * Working with generic types, like List<T>
+     * @return
+     */
+    public NotUsed sourceFilterMapGroupedv2() {
+        return Source.range(1, 200)
+                .via(Flow.of(Integer.class)
+                        .filter(integer -> integer % 17 == 0))
+                .via(Flow.of(Integer.class)
+                        .mapConcat(integer -> List.of(integer, integer + 1, integer + 2)))
+                .via(Flow.of(Integer.class)
+                        .grouped(3)
+                        .map(integerList -> {
+                            List<Integer> newList = new ArrayList<>(integerList);
+                            Collections.sort(newList, Collections.reverseOrder());
+                            return newList;
+                        })
+                        .mapConcat(value -> value))
+                .to(this.sinkForeach())
+                .run(this.actorSystem);
+    }
+
     private <T> Sink<T, CompletionStage<Done>> sinkForeach() {
         return Sink.foreach(log::info);
+    }
+
+    class IntegerList {
+
+        List<Integer> list;
+
+        public List<Integer> list() {
+            return null;
+        }
     }
 
 }

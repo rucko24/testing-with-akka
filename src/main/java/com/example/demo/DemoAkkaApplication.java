@@ -27,7 +27,8 @@ public class DemoAkkaApplication {
 //			log.info(simpleStreamService.sourceRunWith());
 //			log.info(simpleStreamService.sourceRunForEach());
 //			log.info(exploringFlowService.sourceFilter());
-			log.info(exploringFlowService.sourceFilterMapGrouped());
+//			log.info(exploringFlowService.sourceFilterMapGrouped());
+			log.info(exploringFlowService.sourceFilterMapGroupedv2());
 		};
 	}
 

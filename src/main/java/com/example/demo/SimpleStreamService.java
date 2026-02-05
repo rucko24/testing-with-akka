@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 
 @Log4j2
 @Service
@@ -50,6 +51,15 @@ public class SimpleStreamService {
                         .iterator())
                 .delay(Duration.ofSeconds(1), DelayOverflowStrategy.backpressure())
                 .via(Flow.of(String.class))
+                .to(Sink.foreach(log::info))
+                .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
+    }
+
+    public NotUsed sourceInfiniteRangeSource() {
+        return Source.fromIterator(() -> Stream.iterate(0, seed -> 1 + seed)
+                        .iterator())
+                .via(Flow.of(Integer.class))
+                .delay(Duration.ofSeconds(1), DelayOverflowStrategy.dropBuffer())
                 .to(Sink.foreach(log::info))
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }

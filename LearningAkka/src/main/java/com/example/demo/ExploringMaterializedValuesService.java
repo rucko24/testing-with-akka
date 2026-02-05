@@ -8,6 +8,7 @@ import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
+import akka.stream.scaladsl.BroadcastHub;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -139,6 +140,49 @@ public class ExploringMaterializedValuesService {
 //                .whenComplete((value, error) -> {
 //                    actorSystem.terminate();
 //                });
+
+    }
+
+    /**
+     * El mísmo source para crear el grafo, siendo una referencia distinta en ambas referencias result
+     *
+     * @return A CompletionStage<Done>
+     */
+    public CompletionStage<Integer> sourceTwoGraph() {
+        var source = Source.range(1, 100)
+                .map(item -> 1 + SECURE_RANDOM.nextInt(1000));
+
+        Sink<Integer, CompletionStage<Integer>> sinWithSum = Sink.fold(0, (counter, value) -> {
+            log.info(value);
+            return counter + 1;
+        });
+
+        Sink<Integer, CompletionStage<Integer>> sink = Sink.reduce((firstValue, secondValue) -> {
+            log.info(secondValue);
+            return firstValue + secondValue;
+        });
+
+        var result = source.via(Flow.of(Integer.class)
+                        .filter(x -> x > 200))
+                .viaMat(Flow.of(Integer.class)
+                        .filter(x -> x % 2 == 0), Keep.right())
+                .toMat(sink, Keep.right())
+                .run(actorSystem)
+                .whenComplete((value, error) -> {
+                    if (error == null) {
+                        log.info("The graph's materialized value is {}", value);
+                    } else {
+                        log.info("Error {}", error.getMessage());
+                    }
+//                    actorSystem.terminate();
+                });
+
+        return source.toMat(sinWithSum, Keep.right())
+                .run(actorSystem)
+                .whenComplete((value, error) -> {
+//                    actorSystem.terminate();
+
+                });
 
     }
 

@@ -34,7 +34,8 @@ public class DemoAkkaApplication {
 //			log.info(exploringMaterializedValuesService.sourcev2());
 //			log.info(exploringMaterializedValuesService.sourceMatV3());
 //			log.info(exploringMaterializedValuesService.sourceMatV4());
-			log.info(exploringMaterializedValuesService.sourceReduce());
+//			log.info(exploringMaterializedValuesService.sourceReduce());
+			log.info(exploringMaterializedValuesService.sourceTwoGraph());
         };
     }
 

@@ -60,6 +60,7 @@ public class SimpleStreamService {
                         .iterator())
                 .via(Flow.of(Integer.class))
                 .throttle(1, Duration.ofSeconds(1))
+                .take(3)
                 .to(Sink.foreach(log::info))
                 .run(ActorSystem.create(Behaviors.empty(), "actor-system"));
     }

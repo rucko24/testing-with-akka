@@ -8,8 +8,8 @@ import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.Keep;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
-import akka.stream.scaladsl.BroadcastHub;
 import lombok.extern.log4j.Log4j2;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -30,7 +30,7 @@ public class ExploringMaterializedValuesService {
                         .filter(x -> x > 200))
                 .via(Flow.of(Integer.class)
                         .filter(x -> x % 2 == 0))
-                .to(Sink.foreach(log::info))
+                .to(this.sinkForEach())
                 .run(actorSystem);
 
     }
@@ -165,7 +165,9 @@ public class ExploringMaterializedValuesService {
         var result = source.via(Flow.of(Integer.class)
                         .filter(x -> x > 200))
                 .viaMat(Flow.of(Integer.class)
-                        .filter(x -> x % 2 == 0), Keep.right())
+                        .log("input-filter")
+                        .filter(x -> x % 2 == 0)
+                        .log("output-filter"), Keep.right())
                 .toMat(sink, Keep.right())
                 .run(actorSystem)
                 .whenComplete((value, error) -> {
@@ -186,5 +188,8 @@ public class ExploringMaterializedValuesService {
 
     }
 
+    private @NonNull <T> Sink<T, CompletionStage<Done>> sinkForEach() {
+        return Sink.foreach(log::info);
+    }
 
 }

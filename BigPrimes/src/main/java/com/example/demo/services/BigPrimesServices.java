@@ -168,4 +168,47 @@ public class BigPrimesServices {
                 });
     }
 
+    /**
+     *
+     * 33. Other overflow strategies
+     *
+     * @return A CompletionStage<Done>
+     */
+    public CompletionStage<Done> buildBigPrimesBackPressurev2() {
+        long startTime = System.currentTimeMillis();
+        return Source.range(1, 100)
+                .via(Flow.of(Integer.class)
+                        .map(number -> {
+                            final BigInteger bigInteger = new BigInteger(3000, SECURE_RANDOM);
+                            log.info("BigInteger is {}", bigInteger);
+                            return bigInteger;
+                        })
+                        .addAttributes(Attributes.inputBuffer(16, 32)))
+                .buffer(16, OverflowStrategy.dropHead()) //GPS
+                .async()
+                .via(Flow.of(BigInteger.class)
+                        .map(number -> {
+                            var prime = number.nextProbablePrime();
+                            log.info("Prime is " + prime);
+                            return prime;
+                        }))
+                .async()
+                .via(Flow.of(BigInteger.class)
+                        .grouped(10)
+                        .map(list -> {
+                            List<BigInteger> newList = new ArrayList<>(list);
+                            newList.sort(Collections.reverseOrder());
+                            return newList;
+                        }))
+                .toMat(Sink.foreach(log::info), Keep.right())
+                .run(ACTOR_SYSTEM)
+                .whenComplete((data, error) -> {
+                    if(error == null) {
+                        log.info("The application ran in: {}(ms)", System.currentTimeMillis() - startTime);
+                        ACTOR_SYSTEM.terminate();
+                    }
+                });
+    }
+
+
 }

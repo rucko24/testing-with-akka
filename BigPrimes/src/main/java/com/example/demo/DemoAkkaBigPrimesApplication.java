@@ -21,7 +21,8 @@ public class DemoAkkaBigPrimesApplication {
 //            bigPrimesServices.buildBigPrimes();
 //            bigPrimesServices.buildBigPrimesV2();
 //            bigPrimesServices.buildBigPrimesV3();
-            bigPrimesServices.buildBigPrimesBackPressure();
+//            bigPrimesServices.buildBigPrimesBackPressure();
+            bigPrimesServices.buildBigPrimesBackPressurev2();
         };
     }
 

@@ -13,13 +13,14 @@ import akka.stream.javadsl.Source;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executors;
 
 @Log4j2
 @Service
@@ -76,7 +77,7 @@ public class BigPrimesServices {
                 .toMat(Sink.foreach(log::info), Keep.right())
                 .run(ACTOR_SYSTEM)
                 .whenComplete((data, error) -> {
-                    if(error == null) {
+                    if (error == null) {
                         log.info("The application ran in: {}(ms)", System.currentTimeMillis() - startTime);
                         ACTOR_SYSTEM.terminate();
                     }
@@ -85,7 +86,7 @@ public class BigPrimesServices {
 
     /**
      * 30. Asynchronous boundaries v3
-     *
+     * <p>
      * Ejecucion en 2 actores ?
      *
      * @return NotUsed
@@ -119,7 +120,7 @@ public class BigPrimesServices {
                 .toMat(Sink.foreach(log::info), Keep.right())
                 .run(ACTOR_SYSTEM)
                 .whenComplete((data, error) -> {
-                    if(error == null) {
+                    if (error == null) {
                         log.info("The application ran in: {}(ms)", System.currentTimeMillis() - startTime);
                         ACTOR_SYSTEM.terminate();
                     }
@@ -161,7 +162,7 @@ public class BigPrimesServices {
                 .toMat(Sink.foreach(log::info), Keep.right())
                 .run(ACTOR_SYSTEM)
                 .whenComplete((data, error) -> {
-                    if(error == null) {
+                    if (error == null) {
                         log.info("The application ran in: {}(ms)", System.currentTimeMillis() - startTime);
                         ACTOR_SYSTEM.terminate();
                     }
@@ -203,10 +204,102 @@ public class BigPrimesServices {
                 .toMat(Sink.foreach(log::info), Keep.right())
                 .run(ACTOR_SYSTEM)
                 .whenComplete((data, error) -> {
-                    if(error == null) {
+                    if (error == null) {
                         log.info("The application ran in: {}(ms)", System.currentTimeMillis() - startTime);
                         ACTOR_SYSTEM.terminate();
                     }
+                });
+    }
+
+
+    /**
+     *
+     * 34. Parallelism
+     * <p>
+     * usign MapAsync generating 4 diferent actos
+     *
+     * @return A CompletionStage<Done>
+     *
+     */
+    public CompletionStage<Done> buildBigPrimesBackPressureV3() {
+        long startTime = System.currentTimeMillis();
+        return Source.range(1, 10)
+                .via(Flow.of(Integer.class)
+                        .map(number -> {
+                            final BigInteger bigInteger = new BigInteger(3000, SECURE_RANDOM);
+                            log.info("BigInteger is {}", bigInteger);
+                            return bigInteger;
+                        }))
+                .async()
+                .via(this.generatesPrimesAsync())
+                .async()
+                .via(Flow.of(BigInteger.class)
+                        .grouped(10)
+                        .map(inputList -> {
+                            List<BigInteger> newList = new ArrayList<>(inputList);
+                            newList.sort(Collections.reverseOrder());
+                            return newList;
+                        }))
+                .toMat(Sink.foreach(log::info), Keep.right())
+                .run(ACTOR_SYSTEM)
+                .whenComplete((data, error) -> {
+                    if (error == null) {
+                        log.info("The application ran in: {}(ms)", System.currentTimeMillis() - startTime);
+                        ACTOR_SYSTEM.terminate();
+                    }
+                });
+    }
+
+    public CompletionStage<Done> buildBigPrimesBackPressureV4() {
+        long startTime = System.currentTimeMillis();
+        return Source.range(1, 10)
+                .via(Flow.of(Integer.class)
+                        .map(number -> {
+                            final BigInteger bigInteger = new BigInteger(3000, SECURE_RANDOM);
+                            log.info("BigInteger is {}", bigInteger);
+                            return bigInteger;
+                        }))
+                .async()
+                .via(this.generatesPrimesMapAsyncUnordered())
+                .async()
+                .via(Flow.of(BigInteger.class)
+                        .grouped(10)
+                        .map(inputList -> {
+                            List<BigInteger> newList = new ArrayList<>(inputList);
+                            newList.sort(Collections.reverseOrder());
+                            return newList;
+                        }))
+                .toMat(Sink.foreach(log::info), Keep.right())
+                .run(ACTOR_SYSTEM)
+                .whenCompleteAsync((data, error) -> {
+                    if (error == null) {
+                        log.info("The application ran in: {}(ms)", System.currentTimeMillis() - startTime);
+                        ACTOR_SYSTEM.terminate();
+                    }
+                }, Executors.newCachedThreadPool());
+    }
+
+    private Flow<BigInteger, BigInteger, NotUsed> generatesPrimesAsync() {
+        return Flow.of(BigInteger.class)
+                .mapAsync(Runtime.getRuntime().availableProcessors(), number -> {
+                    CompletableFuture<BigInteger> cf = new CompletableFuture<>();
+                    return cf.completeAsync(() -> {
+                        final BigInteger prime = number.nextProbablePrime();
+                        log.info("Prime is " + prime);
+                        return prime;
+                    });
+                });
+    }
+
+    private Flow<BigInteger, BigInteger, NotUsed> generatesPrimesMapAsyncUnordered() {
+        return Flow.of(BigInteger.class)
+                .mapAsyncUnordered(Runtime.getRuntime().availableProcessors(), number -> {
+                    CompletableFuture<BigInteger> cf = new CompletableFuture<>();
+                    return cf.completeAsync(() -> {
+                        final BigInteger prime = number.nextProbablePrime();
+                        log.info("Prime is " + prime);
+                        return prime;
+                    });
                 });
     }
 

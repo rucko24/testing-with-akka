@@ -18,7 +18,10 @@ public class DemoAkkaBigPrimesApplication {
     @Bean
     public CommandLineRunner run(BigPrimesServices bigPrimesServices) {
         return args -> {
-            bigPrimesServices.buildBigPrimesV2();
+//            bigPrimesServices.buildBigPrimes();
+//            bigPrimesServices.buildBigPrimesV2();
+//            bigPrimesServices.buildBigPrimesV3();
+            bigPrimesServices.buildBigPrimesBackPressure();
         };
     }
 

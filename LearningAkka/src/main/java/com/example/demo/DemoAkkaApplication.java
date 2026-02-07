@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.example.demo.monitorinspeed.VehicleSpeedService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -17,7 +18,8 @@ public class DemoAkkaApplication {
     @Bean
     public CommandLineRunner run(SimpleStreamService simpleStreamService,
                                  ExploringFlowService exploringFlowService,
-                                 ExploringMaterializedValuesService exploringMaterializedValuesService) {
+                                 ExploringMaterializedValuesService exploringMaterializedValuesService,
+                                 VehicleSpeedService vehicleSpeedService) {
         return args -> {
 //			log.info(simpleStreamService.simpleStreamWithAnActor());
 //			log.info(simpleStreamService.simpleStreamWithAnActorWithListSources());
@@ -35,7 +37,8 @@ public class DemoAkkaApplication {
 //			log.info(exploringMaterializedValuesService.sourceMatV3());
 //			log.info(exploringMaterializedValuesService.sourceMatV4());
 //			log.info(exploringMaterializedValuesService.sourceReduce());
-			log.info(exploringMaterializedValuesService.sourceTwoGraph());
+//			log.info(exploringMaterializedValuesService.sourceTwoGraph());
+			log.info(vehicleSpeedService.buildVehicleTracking());
         };
     }
 

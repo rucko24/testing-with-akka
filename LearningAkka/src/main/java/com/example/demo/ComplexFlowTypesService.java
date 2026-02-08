@@ -48,17 +48,17 @@ public class ComplexFlowTypesService {
                                 return (number + 2);
                             }));
 
-                    UniformFanOutShape<Integer, Integer> broadcastOut = builder.add(Broadcast.create(2));
+                    UniformFanOutShape<Integer, Integer> broadcast = builder.add(Broadcast.create(2));
 
                     UniformFanInShape<Integer, Integer> merge = builder.add(Merge.create(2));
 
                     builder.from(sourceShape)
-                            .viaFanOut(broadcastOut);
+                            .viaFanOut(broadcast);
 
-                    builder.from(broadcastOut.out(0))
+                    builder.from(broadcast.out(0))
                             .via(flow1Shape);
 
-                    builder.from(broadcastOut.out(1))
+                    builder.from(broadcast.out(1))
                             .via(flow2Shape);
 
                     builder.from(flow1Shape)
@@ -70,6 +70,51 @@ public class ComplexFlowTypesService {
 
                     builder.from(merge)
                             .to(out);
+
+
+                    return ClosedShape.getInstance();
+                })
+        ).run(ACTOR_SYSTEM);
+
+    }
+
+    public CompletionStage<Done> buildFlowTypesComplexV2() {
+
+        var sink = Sink.foreach(log::info);
+
+        return RunnableGraph.fromGraph(GraphDSL.create(sink, (builder, out) -> {
+
+                    var sourceShape = builder.add(Source.range(1, 10));
+
+                    var flow1Shape = builder.add(Flow.of(Integer.class)
+                            .map(number -> {
+                                log.info("Flow 1 is processing " + number);
+                                return (number * 2);
+                            }));
+
+                    var flow2Shape = builder.add(Flow.of(Integer.class)
+                            .map(number -> {
+                                log.info("Flow 2 is processing " + number);
+                                return (number + 2);
+                            }));
+
+                    UniformFanOutShape<Integer, Integer> broadcast = builder.add(Broadcast.create(2));
+
+                    UniformFanInShape<Integer, Integer> merge = builder.add(Merge.create(2));
+
+                    builder.from(sourceShape)
+                            .viaFanOut(broadcast)
+                            .via(flow1Shape);
+
+                    builder.from(broadcast)
+                            .via(flow2Shape);
+
+                    builder.from(flow1Shape)
+                            .viaFanIn(merge)
+                            .to(out);
+
+                    builder.from(flow2Shape)
+                            .viaFanIn(merge);
 
                     return ClosedShape.getInstance();
                 })

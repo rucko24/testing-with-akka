@@ -41,7 +41,8 @@ public class DemoAkkaApplication {
 //			log.info(exploringMaterializedValuesService.sourceTwoGraph());
 //			log.info(vehicleSpeedService.buildVehicleTracking());
 //			log.info(vehicleSpeedService.buildGraphDSL());
-            log.info(complexFlowTypesService.buildFlowTypesComplex());
+//            log.info(complexFlowTypesService.buildFlowTypesComplex());
+            log.info(complexFlowTypesService.buildFlowTypesComplexV2());
         };
     }
 

@@ -19,7 +19,8 @@ public class DemoAkkaApplication {
     public CommandLineRunner run(SimpleStreamService simpleStreamService,
                                  ExploringFlowService exploringFlowService,
                                  ExploringMaterializedValuesService exploringMaterializedValuesService,
-                                 VehicleSpeedService vehicleSpeedService) {
+                                 VehicleSpeedService vehicleSpeedService,
+                                 ComplexFlowTypesService complexFlowTypesService) {
         return args -> {
 //			log.info(simpleStreamService.simpleStreamWithAnActor());
 //			log.info(simpleStreamService.simpleStreamWithAnActorWithListSources());
@@ -39,7 +40,8 @@ public class DemoAkkaApplication {
 //			log.info(exploringMaterializedValuesService.sourceReduce());
 //			log.info(exploringMaterializedValuesService.sourceTwoGraph());
 //			log.info(vehicleSpeedService.buildVehicleTracking());
-			log.info(vehicleSpeedService.buildGraphDSL());
+//			log.info(vehicleSpeedService.buildGraphDSL());
+            log.info(complexFlowTypesService.buildFlowTypesComplex());
         };
     }
 

@@ -21,7 +21,8 @@ public class DemoAkkaApplication {
                                  ExploringMaterializedValuesService exploringMaterializedValuesService,
                                  VehicleSpeedService vehicleSpeedService,
                                  ComplexFlowTypesService complexFlowTypesService,
-                                 ExploringConcurrencyService exploringConcurrencyService) {
+                                 ExploringConcurrencyService exploringConcurrencyService,
+                                 UniFormFanShapesServices uniFormFanShapesServices) {
         return args -> {
 //			log.info(simpleStreamService.simpleStreamWithAnActor());
 //			log.info(simpleStreamService.simpleStreamWithAnActorWithListSources());
@@ -43,9 +44,10 @@ public class DemoAkkaApplication {
 //			log.info(vehicleSpeedService.buildVehicleTracking());
 //			log.info(vehicleSpeedService.buildGraphDSL());
 //          log.info(complexFlowTypesService.buildFlowTypesComplex());
-//            log.info(complexFlowTypesService.buildFlowTypesComplexV2());
-//            log.info(exploringConcurrencyService.balanceParallelilms());
-            log.info(vehicleSpeedService.buildGraphDSLV2());
+//          log.info(complexFlowTypesService.buildFlowTypesComplexV2());
+//          log.info(exploringConcurrencyService.balanceParallelilms());
+//          log.info(vehicleSpeedService.buildGraphDSLV2());
+            log.info(uniFormFanShapesServices.buildRandomNumbers());
         };
 
     }

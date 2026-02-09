@@ -6,9 +6,13 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.stream.ClosedShape;
 import akka.stream.FlowShape;
 import akka.stream.SourceShape;
+import akka.stream.UniformFanInShape;
+import akka.stream.UniformFanOutShape;
+import akka.stream.javadsl.Balance;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.GraphDSL;
 import akka.stream.javadsl.Keep;
+import akka.stream.javadsl.Merge;
 import akka.stream.javadsl.RunnableGraph;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
@@ -113,6 +117,72 @@ public class VehicleSpeedService {
                                     .to(out);
 
                             builder.from(filterSpeedShape)
+                                    .to(out);
+
+                            return ClosedShape.getInstance();
+                        })
+                )
+                .run(ACTOR_SYSTEM);
+
+        return runnableGraph.whenComplete((data, throwable) -> {
+            if (throwable != null) {
+                log.info("Something went wrong {}", throwable.getMessage());
+            } else {
+                //log.info("Vehicle id: {} is was going at speed: {}", data.getVehicleId(), data.getSpeed());
+            }
+            ACTOR_SYSTEM.terminate();
+        });
+
+    }
+
+    /**
+     *
+     * 44. Exercise 3 - implementing parallelism in GraphDSL
+     *
+     * @return
+     */
+    public CompletionStage<Object> buildGraphDSLV2() {
+
+        for (int i = 0; i <= 8; i++) {
+            vehiclePositions.put(i, new VehiclePositionMessage(1, new Date(), 0, 0));
+        }
+
+        CompletionStage<Object> runnableGraph = RunnableGraph.fromGraph(
+                        GraphDSL.create(Sink.head(), (builder, out) -> {
+
+                            SourceShape<String> sourceShape = builder.add(Source.repeat("go")
+                                    .throttle(1, Duration.ofSeconds(1)));
+
+                            FlowShape<String, Integer> vehicleIdsShape = builder.add(this.vehicleIds());
+
+//                            FlowShape<Integer, VehiclePositionMessage> vehiclePositionsShape = builder.add(this.vehiclePosition(vehiclePositions));
+
+                            FlowShape<VehiclePositionMessage, VehicleSpeed> vehicleSpeedShape = builder.add(this.vehicleSpeed(vehiclePositions));
+
+                            FlowShape<VehicleSpeed, VehicleSpeed> filterSpeedShape = builder.add(Flow.of(VehicleSpeed.class)
+                                    .filter(vehicleSpeed -> vehicleSpeed.getSpeed() > 95));
+
+                            //No hace falta hacer este paso
+                            //builder.add(sink);
+                            UniformFanOutShape<Integer, Integer> balance =
+                                    builder.add(Balance.create(8, true));
+
+                            UniformFanInShape<VehiclePositionMessage, VehiclePositionMessage> merge =
+                                    builder.add(Merge.create(8));
+
+                            builder.from(sourceShape)
+                                    .via(vehicleIdsShape)
+                                    .viaFanOut(balance);
+
+                            for(int i=0; i < 8; i++) {
+                                builder.from(balance)
+                                        .via(builder.add(this.vehiclePosition(vehiclePositions).async()))
+                                        .viaFanIn(merge);
+                            }
+
+                            builder.from(merge)
+                                    .via(vehicleSpeedShape)
+                                    .via(filterSpeedShape)
                                     .to(out);
 
                             return ClosedShape.getInstance();

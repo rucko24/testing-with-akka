@@ -44,7 +44,8 @@ public class DemoAkkaApplication {
 //			log.info(vehicleSpeedService.buildGraphDSL());
 //          log.info(complexFlowTypesService.buildFlowTypesComplex());
 //            log.info(complexFlowTypesService.buildFlowTypesComplexV2());
-            log.info(exploringConcurrencyService.balanceParallelilms());
+//            log.info(exploringConcurrencyService.balanceParallelilms());
+            log.info(vehicleSpeedService.buildGraphDSLV2());
         };
 
     }

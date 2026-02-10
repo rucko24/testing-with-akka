@@ -49,7 +49,7 @@ public class DemoAkkaApplication {
 //          log.info(exploringConcurrencyService.balanceParallelilms());
 //          log.info(vehicleSpeedService.buildGraphDSLV2());
 //            log.info(uniFormFanShapesServices.buildRandomNumbers());
-            log.info(fanOutFanInService.buildFanOutFanIn());
+           // log.info(fanOutFanInService.buildFanOutFanIn());
         };
 
     }

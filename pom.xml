@@ -10,6 +10,11 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
+	<properties>
+		<java.version>21</java.version>
+		<akka.version>2.7.0</akka.version>
+	</properties>
+
 	<groupId>com.example</groupId>
 	<artifactId>demo</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -28,6 +33,7 @@
 	<modules>
 		<module>BigPrimes</module>
 		<module>LearningAkka</module>
+		<module>transactionmanager</module>
 	</modules>
 
 	<scm>
@@ -36,9 +42,7 @@
 		<tag/>
 		<url/>
 	</scm>
-	<properties>
-		<java.version>21</java.version>
-	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -55,13 +59,13 @@
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
 			<artifactId>akka-stream_3</artifactId>
-			<version>2.7.0</version>
+			<version>${akka.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
 			<artifactId>akka-actor-typed_3</artifactId>
-			<version>2.7.0</version>
+			<version>${akka.version}</version>
 		</dependency>
 
 		<dependency>

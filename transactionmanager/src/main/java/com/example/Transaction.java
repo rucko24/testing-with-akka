@@ -38,6 +38,6 @@ public class Transaction {
     }
 
     public String toString() {
-        return "ID : " + uniqueId + " com.example.Account : " + accountNumber + " Amount : " + amount + " Date : " + date;
+        return "ID : " + uniqueId + " Account : " + accountNumber + " Amount : " + amount + " Date : " + date;
     }
 }

@@ -58,13 +58,16 @@ public class Main {
             return new Transfer(from, to);
         });
 
-        Flow<Transfer, Transaction, NotUsed> transactionsFromTransfer = Flow.of(Transfer.class)
+        Flow<Transfer, Transaction, NotUsed> getTransactionsFromTransfer = Flow.of(Transfer.class)
                         .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo()));
+
+//        Flow.of(Transfer.class)
+//                .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo()));
 
         Source<Integer, NotUsed> transactionIDsSource = Source.fromIterator(() ->
                 Stream.iterate(1, i -> i + 1).limit(10).iterator());
 
-        Sink.foreach((Transfer transfer) ->  {
+        var transferLogger = Sink.foreach((Transfer transfer) ->  {
             log.info("tranfer from {} to {} of{}", transfer.getFrom().getAccountNumber(),
                     transfer.getTo().getAccountNumber(), transfer.getFrom().getAmount());
         });
@@ -79,20 +82,12 @@ public class Main {
                             }));
 
                     builder.from(builder.add(source))
-                            .via(builder.add(generateTransfer))
-                            .via(builder.add(Flow.of(Transfer.class)
-                                    .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo())
-                                    )
-                            ))
+                            .via(builder.add(generateTransfer.alsoTo(transferLogger)))
+                            .via(builder.add(getTransactionsFromTransfer))
                             .toInlet(assignTransaction.in0());
 
-                    builder.from(builder.add(
-                                    Source.fromIterator(() -> Stream.iterate(1, i -> i + 1)
-                                            .iterator()
-                                    )
-                            )
-                    ).toInlet(assignTransaction.in1());
-
+                    builder.from(builder.add(transactionIDsSource))
+                            .toInlet(assignTransaction.in1());
 
                     builder.from(assignTransaction.out())
                             .to(out);

@@ -2,7 +2,6 @@ package com.example;
 
 import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
-import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.stream.ClosedShape;
 import akka.stream.FanInShape2;
@@ -59,7 +58,7 @@ public class Main {
         });
 
         Flow<Transfer, Transaction, NotUsed> getTransactionsFromTransfer = Flow.of(Transfer.class)
-                        .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo()));
+                .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo()));
 
 //        Flow.of(Transfer.class)
 //                .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo()));
@@ -67,9 +66,22 @@ public class Main {
         Source<Integer, NotUsed> transactionIDsSource = Source.fromIterator(() ->
                 Stream.iterate(1, i -> i + 1).limit(10).iterator());
 
-        var transferLogger = Sink.foreach((Transfer transfer) ->  {
-            log.info("tranfer from {} to {} of{}", transfer.getFrom().getAccountNumber(),
+        var transferLogger = Sink.foreach((Transfer transfer) -> {
+            log.info("tranfer from {} to {} of {}", transfer.getFrom().getAccountNumber(),
                     transfer.getTo().getAccountNumber(), transfer.getFrom().getAmount());
+        });
+
+        Flow<Transaction, Transaction, NotUsed> applyTransactionToAccounts = Flow.of(Transaction.class)
+                .map(transaction -> {
+                    Account account = accounts.get(transaction.getAccountNumber());
+                    account.addTransaction(transaction);
+                    log.info("Account {}", account.getId() + " now has a balance of " + account.getBalance());
+                    return transaction;
+                });
+
+        var rejectedSink = Sink.foreach((Transaction transaction) -> {
+            log.info("REJECTED transaction {} as account balance is {}",
+                    transaction, accounts.get(transaction.getAccountNumber()).getBalance());
         });
 
         RunnableGraph.fromGraph(
@@ -84,12 +96,21 @@ public class Main {
                     builder.from(builder.add(source))
                             .via(builder.add(generateTransfer.alsoTo(transferLogger)))
                             .via(builder.add(getTransactionsFromTransfer))
+
                             .toInlet(assignTransaction.in0());
 
                     builder.from(builder.add(transactionIDsSource))
                             .toInlet(assignTransaction.in1());
 
+                    // Here we add a Flow for transactions that will be rejected. divertTo
                     builder.from(assignTransaction.out())
+                            .via(builder.add(Flow.of(Transaction.class)
+                                    .divertTo(rejectedSink, transaction -> {
+                                                Account account = accounts.get(transaction.getAccountNumber());
+                                                BigDecimal foreCastBalence = account.getBalance().add(transaction.getAmount());
+                                                return (foreCastBalence.compareTo(BigDecimal.ZERO) < 0);
+                                            })))
+                            .via(builder.add(applyTransactionToAccounts))
                             .to(out);
 
                     return ClosedShape.getInstance();

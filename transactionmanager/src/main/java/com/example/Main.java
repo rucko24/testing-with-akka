@@ -58,6 +58,17 @@ public class Main {
             return new Transfer(from, to);
         });
 
+        Flow<Transfer, Transaction, NotUsed> transactionsFromTransfer = Flow.of(Transfer.class)
+                        .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo()));
+
+        Source<Integer, NotUsed> transactionIDsSource = Source.fromIterator(() ->
+                Stream.iterate(1, i -> i + 1).limit(10).iterator());
+
+        Sink.foreach((Transfer transfer) ->  {
+            log.info("tranfer from {} to {} of{}", transfer.getFrom().getAccountNumber(),
+                    transfer.getTo().getAccountNumber(), transfer.getFrom().getAmount());
+        });
+
         RunnableGraph.fromGraph(
                 GraphDSL.create(Sink.foreach(log::info), (builder, out) -> {
 
@@ -89,7 +100,5 @@ public class Main {
                     return ClosedShape.getInstance();
                 })
         ).run(ACTOR_SYSTEM);
-
-
     }
 }

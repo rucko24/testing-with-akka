@@ -3,8 +3,6 @@ package com.example;
 import akka.Done;
 import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
-import akka.actor.typed.javadsl.Behaviors;
-import akka.stream.ClosedShape;
 import akka.stream.FanInShape2;
 import akka.stream.FlowShape;
 import akka.stream.Graph;
@@ -12,18 +10,16 @@ import akka.stream.SinkShape;
 import akka.stream.SourceShape;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.GraphDSL;
-import akka.stream.javadsl.RunnableGraph;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.ZipWith;
+import akka.stream.typed.javadsl.ActorFlow;
 import lombok.extern.log4j.Log4j2;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
@@ -31,16 +27,9 @@ import java.util.stream.Stream;
 @Log4j2
 public class Main {
 
-    private static final ActorSystem<String> ACTOR_SYSTEM = ActorSystem.create(Behaviors.empty(), "actor-system");
+//    private static final ActorSystem<String> ACTOR_SYSTEM = ActorSystem.create(Behaviors.empty(), "actor-system");
 
     public static void main(String[] args) {
-
-        Map<Integer, Account> accounts = new HashMap<>();
-
-        //set up accounts
-        for (int i = 1; i <= 10; i++) {
-            accounts.put(i, new Account(i, new BigDecimal(1000)));
-        }
 
         //source to generate 1 transaction every second
         Source<Integer, NotUsed> source = Source.repeat(1)
@@ -85,11 +74,6 @@ public class Main {
                     return transaction;
                 });
 
-        var rejectedTransactionsSink = Sink.foreach((Transaction transaction) -> {
-            log.info("REJECTED transaction {} as account balance is {}",
-                    transaction, accounts.get(transaction.getAccountNumber()).getBalance());
-        });
-
 
         Graph<SourceShape<Transaction>, NotUsed> sourcePartialGraph = GraphDSL.create(
                 builder -> {
@@ -129,9 +113,19 @@ public class Main {
                     return SinkShape.of(entryFlow.in());
                 }
         );
-        
-        Source.fromGraph(sourcePartialGraph)
-                .to(sinkPartialGraph)
-                .run(ACTOR_SYSTEM);
+
+        final ActorSystem<AccountManager.AccountManagerCommand> accountManager = ActorSystem.create(
+                AccountManager.create(), "account-manager"
+        );
+
+        Flow<Transaction, AccountManager.AddTransactionResponse, NotUsed> attempToApplyTransaction =
+                ActorFlow.ask(accountManager, Duration.ofSeconds(10), AccountManager.AddTransactionCommand::new);
+
+        Sink<AccountManager.AddTransactionResponse, CompletionStage<Done>> rejectedTransactionsSink = Sink.foreach(
+                (trans) -> log.info("REJECTED transaction {}", trans.getTransaction()));
+
+//        Source.fromGraph(sourcePartialGraph)
+//                .to(sinkPartialGraph)
+//                .run(ACTOR_SYSTEM);
     }
 }

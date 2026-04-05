@@ -69,6 +69,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>com.typesafe.akka</groupId>
+			<artifactId>akka-stream-typed_3</artifactId>
+			<version>${akka.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.42</version>

@@ -1,10 +1,15 @@
 package com.example;
 
+import akka.Done;
 import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.stream.ClosedShape;
 import akka.stream.FanInShape2;
+import akka.stream.FlowShape;
+import akka.stream.Graph;
+import akka.stream.SinkShape;
+import akka.stream.SourceShape;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.GraphDSL;
 import akka.stream.javadsl.RunnableGraph;
@@ -20,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -79,15 +85,16 @@ public class Main {
                     return transaction;
                 });
 
-        var rejectedSink = Sink.foreach((Transaction transaction) -> {
+        var rejectedTransactionsSink = Sink.foreach((Transaction transaction) -> {
             log.info("REJECTED transaction {} as account balance is {}",
                     transaction, accounts.get(transaction.getAccountNumber()).getBalance());
         });
 
-        RunnableGraph.fromGraph(
-                GraphDSL.create(Sink.foreach(log::info), (builder, out) -> {
 
-                    FanInShape2<Transaction, Integer, Transaction> assignTransaction = builder.add(
+        Graph<SourceShape<Transaction>, NotUsed> sourcePartialGraph = GraphDSL.create(
+                builder -> {
+
+                    FanInShape2<Transaction, Integer, Transaction> assignTransactionIDs = builder.add(
                             ZipWith.create((trans, id) -> {
                                 trans.setUniqueId(id);
                                 return trans;
@@ -96,25 +103,46 @@ public class Main {
                     builder.from(builder.add(source))
                             .via(builder.add(generateTransfer.alsoTo(transferLogger)))
                             .via(builder.add(getTransactionsFromTransfer))
-
-                            .toInlet(assignTransaction.in0());
+                            .toInlet(assignTransactionIDs.in0());
 
                     builder.from(builder.add(transactionIDsSource))
-                            .toInlet(assignTransaction.in1());
+                            .toInlet(assignTransactionIDs.in1());
 
-                    // Here we add a Flow for transactions that will be rejected. divertTo
-                    builder.from(assignTransaction.out())
-                            .via(builder.add(Flow.of(Transaction.class)
-                                    .divertTo(rejectedSink, transaction -> {
-                                                Account account = accounts.get(transaction.getAccountNumber());
-                                                BigDecimal foreCastBalence = account.getBalance().add(transaction.getAmount());
-                                                return (foreCastBalence.compareTo(BigDecimal.ZERO) < 0);
-                                            })))
+                    return SourceShape.of(assignTransactionIDs.out());
+                }
+        );
+
+        Graph<SinkShape<Transaction>, CompletionStage<Done>> sinkPartialGraph = GraphDSL.create(
+                Sink.foreach(log::info), (builder, out) -> {
+
+                    FlowShape<Transaction, Transaction> entryFlow = builder.add(Flow.of(Transaction.class)
+                            .divertTo(rejectedTransactionsSink, transaction -> {
+                                Account account = accounts.get(transaction.getAccountNumber());
+                                BigDecimal foreCastBalence = account.getBalance().add(transaction.getAmount());
+                                return (foreCastBalence.compareTo(BigDecimal.ZERO) < 0);
+                            }));
+
+                    builder.from(entryFlow)
                             .via(builder.add(applyTransactionToAccounts))
                             .to(out);
 
-                    return ClosedShape.getInstance();
-                })
-        ).run(ACTOR_SYSTEM);
+                    return SinkShape.of(entryFlow.in());
+                }
+        );
+
+
+        RunnableGraph<CompletionStage<Done>> runnableGraph = RunnableGraph.fromGraph(
+                GraphDSL.create(sinkPartialGraph, (builder, out) -> {
+
+                    builder.from(builder.add(sourcePartialGraph))
+                            .to(out);
+
+                            return ClosedShape.getInstance();
+                        }
+                )
+        );
+
+        runnableGraph.run(ACTOR_SYSTEM);
+
     }
 }

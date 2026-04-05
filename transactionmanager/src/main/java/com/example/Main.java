@@ -129,20 +129,9 @@ public class Main {
                     return SinkShape.of(entryFlow.in());
                 }
         );
-
-
-        RunnableGraph<CompletionStage<Done>> runnableGraph = RunnableGraph.fromGraph(
-                GraphDSL.create(sinkPartialGraph, (builder, out) -> {
-
-                    builder.from(builder.add(sourcePartialGraph))
-                            .to(out);
-
-                            return ClosedShape.getInstance();
-                        }
-                )
-        );
-
-        runnableGraph.run(ACTOR_SYSTEM);
-
+        
+        Source.fromGraph(sourcePartialGraph)
+                .to(sinkPartialGraph)
+                .run(ACTOR_SYSTEM);
     }
 }

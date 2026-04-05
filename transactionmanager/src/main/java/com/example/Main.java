@@ -14,6 +14,7 @@ import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
 import akka.stream.javadsl.ZipWith;
 import akka.stream.typed.javadsl.ActorFlow;
+import akka.stream.typed.javadsl.ActorSink;
 import lombok.extern.log4j.Log4j2;
 
 import java.math.BigDecimal;
@@ -54,10 +55,7 @@ public class Main {
 
         Flow<Transfer, Transaction, NotUsed> getTransactionsFromTransfer = Flow.of(Transfer.class)
                 .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo()));
-
-//        Flow.of(Transfer.class)
-//                .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo()));
-
+        
         Source<Integer, NotUsed> transactionIDsSource = Source.fromIterator(() ->
                 Stream.iterate(1, i -> i + 1).limit(10).iterator());
 
@@ -65,15 +63,6 @@ public class Main {
             log.info("tranfer from {} to {} of {}", transfer.getFrom().getAccountNumber(),
                     transfer.getTo().getAccountNumber(), transfer.getFrom().getAmount());
         });
-
-        Flow<Transaction, Transaction, NotUsed> applyTransactionToAccounts = Flow.of(Transaction.class)
-                .map(transaction -> {
-                    Account account = accounts.get(transaction.getAccountNumber());
-                    account.addTransaction(transaction);
-                    log.info("Account {}", account.getId() + " now has a balance of " + account.getBalance());
-                    return transaction;
-                });
-
 
         Graph<SourceShape<Transaction>, NotUsed> sourcePartialGraph = GraphDSL.create(
                 builder -> {
@@ -96,24 +85,6 @@ public class Main {
                 }
         );
 
-        Graph<SinkShape<Transaction>, CompletionStage<Done>> sinkPartialGraph = GraphDSL.create(
-                Sink.foreach(log::info), (builder, out) -> {
-
-                    FlowShape<Transaction, Transaction> entryFlow = builder.add(Flow.of(Transaction.class)
-                            .divertTo(rejectedTransactionsSink, transaction -> {
-                                Account account = accounts.get(transaction.getAccountNumber());
-                                BigDecimal foreCastBalence = account.getBalance().add(transaction.getAmount());
-                                return (foreCastBalence.compareTo(BigDecimal.ZERO) < 0);
-                            }));
-
-                    builder.from(entryFlow)
-                            .via(builder.add(applyTransactionToAccounts))
-                            .to(out);
-
-                    return SinkShape.of(entryFlow.in());
-                }
-        );
-
         final ActorSystem<AccountManager.AccountManagerCommand> accountManager = ActorSystem.create(
                 AccountManager.create(), "account-manager"
         );
@@ -124,8 +95,23 @@ public class Main {
         Sink<AccountManager.AddTransactionResponse, CompletionStage<Done>> rejectedTransactionsSink = Sink.foreach(
                 (trans) -> log.info("REJECTED transaction {}", trans.getTransaction()));
 
-//        Source.fromGraph(sourcePartialGraph)
-//                .to(sinkPartialGraph)
-//                .run(ACTOR_SYSTEM);
+        Flow<AccountManager.AddTransactionResponse, AccountManager.AccountManagerCommand, NotUsed> receiveResult =
+                Flow.of(AccountManager.AddTransactionResponse.class)
+                        .map(result -> {
+                            log.info("Logging {}", result.getTransaction());
+                            return new AccountManager.DisplayBalanceCommand(result.getTransaction().getAccountNumber());
+                        });
+
+        Sink<AccountManager.AccountManagerCommand, NotUsed> displayBalanceSink =
+                ActorSink.actorRef(accountManager, new AccountManager.CompleteCommand(),
+                        (throwable) -> new AccountManager.FailedCommand());
+
+        Source.fromGraph(sourcePartialGraph)
+                .via(attempToApplyTransaction
+                        .divertTo(rejectedTransactionsSink, result -> !result.getSucceeded()))
+                .via(receiveResult)
+                .to(displayBalanceSink)
+                .run(accountManager);
+
     }
 }

@@ -4,9 +4,7 @@ import akka.Done;
 import akka.NotUsed;
 import akka.actor.typed.ActorSystem;
 import akka.stream.FanInShape2;
-import akka.stream.FlowShape;
 import akka.stream.Graph;
-import akka.stream.SinkShape;
 import akka.stream.SourceShape;
 import akka.stream.javadsl.Flow;
 import akka.stream.javadsl.GraphDSL;
@@ -28,13 +26,11 @@ import java.util.stream.Stream;
 @Log4j2
 public class Main {
 
-//    private static final ActorSystem<String> ACTOR_SYSTEM = ActorSystem.create(Behaviors.empty(), "actor-system");
-
     public static void main(String[] args) {
 
         //source to generate 1 transaction every second
         Source<Integer, NotUsed> source = Source.repeat(1)
-                .throttle(1, Duration.ofSeconds(10));
+                .throttle(1, Duration.ofSeconds(3));
 
         final Random random = new Random();
         //flow to create a random transfer
@@ -55,11 +51,11 @@ public class Main {
 
         Flow<Transfer, Transaction, NotUsed> getTransactionsFromTransfer = Flow.of(Transfer.class)
                 .mapConcat(transfer -> List.of(transfer.getFrom(), transfer.getTo()));
-        
+
         Source<Integer, NotUsed> transactionIDsSource = Source.fromIterator(() ->
                 Stream.iterate(1, i -> i + 1).limit(10).iterator());
 
-        var transferLogger = Sink.foreach((Transfer transfer) -> {
+        Sink<Transfer, CompletionStage<Done>> transferLogger = Sink.foreach((Transfer transfer) -> {
             log.info("tranfer from {} to {} of {}", transfer.getFrom().getAccountNumber(),
                     transfer.getTo().getAccountNumber(), transfer.getFrom().getAmount());
         });

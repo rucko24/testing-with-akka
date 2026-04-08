@@ -11,6 +11,7 @@ import lombok.extern.log4j.Log4j2;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
 @Log4j2
@@ -42,8 +43,14 @@ public class AdvancedBackpressure {
                     return x.toString();
                 }).throttle(1, Duration.ofSeconds(1));
 
+
+       Flow<String, String, NotUsed> extrapolateFlow = Flow.of(String.class)
+                .extrapolate(x -> List.of(x).iterator());
+
         source.via(conflateFlow)
                 .via(flow)
+                .async()
+                .via(extrapolateFlow)
                 .to(Sink.foreach(x -> log.info("Sinking {}", x)))
                 .run(actorSystem);
 
